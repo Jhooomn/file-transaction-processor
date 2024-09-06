@@ -10,6 +10,7 @@ GO_VENDOR := $(GO) mod vendor
 GO_VET := $(GO) vet ./...
 GO_FMT := $(GO) fmt ./...
 
+
 build:
 	@echo "Building $(APP_NAME)..."
 	$(GO_BUILD) -o $(BUILD_DIR)/$(APP_NAME) .
@@ -22,19 +23,18 @@ test:
 	@echo "Running tests..."
 	$(GO_TEST) ./...
 
+
 tidy_vendor:
 	@echo "Tidying and vendoring dependencies..."
 	$(GO_TIDY)
 	$(GO_VENDOR)
 
-
-format: 
+format:
 	@echo "Formatting current golang code..."
 	$(GO_FMT)
 	$(GO_VET)
 
-
 local_pipeline:
-	make format && make tidy_vendor && make build && make test && make run
+	make tidy_vendor && make format && make build && make test && make run
 
-.PHONY: build run test tidy_vendor format local_pipeline
+.PHONY: build run test tidy_vendor format local_pipeline 
