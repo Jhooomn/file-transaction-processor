@@ -1,8 +1,6 @@
-# Variables
 APP_NAME := file-transaction-processor
 BUILD_DIR := ./build
 
-# Go settings
 GO := go
 GO_BUILD := $(GO) build
 GO_TEST := $(GO) test
