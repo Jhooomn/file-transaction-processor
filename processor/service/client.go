@@ -4,8 +4,7 @@ type processorService struct {
 	opts                opts
 	logger              Logger
 	processorRepository processorRepository
-	// email service client
-	// file  service client
+	emailService        emailService
 }
 
 type opts struct {
@@ -18,6 +17,7 @@ func NewProcessorService(
 	workerPool int,
 	logger Logger,
 	processorRepository processorRepository,
+	emailService emailService,
 ) ProcessorServiceClient {
 	return &processorService{
 		opts: opts{
@@ -26,5 +26,6 @@ func NewProcessorService(
 		},
 		logger:              logger,
 		processorRepository: processorRepository,
+		emailService:        emailService,
 	}
 }

@@ -14,6 +14,10 @@ type ProcessorServiceClient interface {
 	Execute()
 }
 
+type emailService interface {
+	Send(ctx context.Context, recipient, subject, body string) error
+}
+
 type Logger interface {
 	Debug(msg string, fields ...zap.Field)
 	Info(msg string, fields ...zap.Field)
