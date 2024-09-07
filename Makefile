@@ -34,7 +34,10 @@ format:
 	$(GO_FMT)
 	$(GO_VET)
 
-local_pipeline:
-	make tidy_vendor && make format && make build && make test && make run
+mocks:
+	mockery --all --recursive --output=mocks
 
-.PHONY: build run test tidy_vendor format local_pipeline 
+local_pipeline:
+	make tidy_vendor && make format && make build && make test && make mocks && make run 
+
+.PHONY: build run test tidy_vendor format local_pipeline  mocks
