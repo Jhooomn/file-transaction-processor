@@ -111,7 +111,19 @@ func (ps *processorService) process(ctx context.Context, data []map[string]strin
 
 	ps.logger.Info(fmt.Sprintf("record has been saved into db [%s] - [%s]", defaultName, defaultEmail))
 
-	// send notifications concurrently
+	// fetch template
+	var msg, subject string
+	msg = "Hello, there!"
+	now := time.Now()
+
+	subject = fmt.Sprintf("Stori Total Balance %d/%v/%d", now.Day(), int(now.Month()), now.Year())
+
+	// send notifications
+	err = ps.emailService.Send(ctx, defaultEmail, subject, msg)
+	if err != nil {
+		ps.logger.Error(fmt.Sprintf("It was no possible to send the email: [%s]", err))
+		return err
+	}
 
 	return nil
 }
