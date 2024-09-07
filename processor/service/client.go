@@ -1,13 +1,11 @@
 package service
 
-import "github.com/sirupsen/logrus"
-
 type processorService struct {
-	opts   opts
-	logger *logrus.Logger
+	opts                opts
+	logger              Logger
+	processorRepository processorRepository
 	// email service client
 	// file  service client
-	// user  repo    client
 }
 
 type opts struct {
@@ -18,13 +16,15 @@ type opts struct {
 func NewProcessorService(
 	dataPath string,
 	workerPool int,
-	logger *logrus.Logger,
-) ProcessorService {
+	logger Logger,
+	processorRepository processorRepository,
+) ProcessorServiceClient {
 	return &processorService{
 		opts: opts{
 			dataPath:   dataPath,
 			workerPool: workerPool,
 		},
-		logger: logger,
+		logger:              logger,
+		processorRepository: processorRepository,
 	}
 }

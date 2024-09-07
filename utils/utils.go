@@ -4,19 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
-
-	"github.com/sirupsen/logrus"
 )
-
-func NewLogger() *logrus.Logger {
-	logger := logrus.New()
-	logger.SetLevel(logrus.InfoLevel)
-	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
-
-	return logger
-}
 
 // ReadCSV reads a CSV file and returns the data as a slice of maps.
 // Columns is an array of column names to be used as keys in the map.

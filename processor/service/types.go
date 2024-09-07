@@ -2,6 +2,8 @@ package service
 
 import (
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // TransactionType represents the type of transaction.
@@ -20,17 +22,10 @@ type TransactionRecord struct {
 	Type        TransactionType
 }
 
-// ParseTransactionType determines if the transaction is a credit or debit.
-func (tr *TransactionRecord) ParseTransactionType() {
-	if tr.Transaction >= 0 {
-		tr.Type = Credit
-	} else {
-		tr.Type = Debit
-	}
-}
-
-// UserSummary stores the summary of the user's transactions.
+// UserSummary stores the latest summary of the user's transactions.
 type UserSummary struct {
+	Id                   primitive.ObjectID
+	Contact              Contact
 	TotalBalance         float64
 	TransactionsPerMonth map[string]uint
 	AvgCredit            float64
@@ -39,28 +34,14 @@ type UserSummary struct {
 	DebitCount           uint
 }
 
-// CalculateSummary calculates the summary of transactions for a user.
-func (us *UserSummary) CalculateSummary(transactions []TransactionRecord) {
-	us.TransactionsPerMonth = make(map[string]uint)
+// Contact store common info of the user
+type Contact struct {
+	Name  string
+	Email string
+}
 
-	for _, tr := range transactions {
-		month := tr.Date.Format("January 2006")
-
-		us.TransactionsPerMonth[month]++
-
-		us.TotalBalance += tr.Transaction
-
-		if tr.Type == Credit {
-			us.AvgCredit += tr.Transaction // counter
-			us.CreditCount++
-		} else {
-			us.AvgDebit += tr.Transaction // counter
-			us.DebitCount++
-		}
-	}
-
-	noMonths := float64(len(us.TransactionsPerMonth))
-
-	us.AvgDebit = us.AvgDebit / noMonths
-	us.AvgCredit = us.AvgCredit / noMonths
+// Historic contains logging values for the record
+type Historic struct {
+	CreatedAt time.Time
+	UpdatedAt *time.Time
 }
