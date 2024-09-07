@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // ReadCSV reads a CSV file and returns the data as a slice of maps.
@@ -51,21 +52,17 @@ func ReadCSV(filePath string, columns []string) ([]map[string]string, error) {
 	return result, nil
 }
 
-// GetFileNames returns a slice of file names in the specified folder.
 func GetFileNames(folderPath string) ([]string, error) {
 	var fileNames []string
 
-	// Open the directory
 	files, err := os.ReadDir(folderPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// Iterate through the directory entries
 	for _, file := range files {
-		// Check if the entry is a file (not a directory)
 		if !file.IsDir() {
-			fileNames = append(fileNames, fmt.Sprint(folderPath, file.Name()))
+			fileNames = append(fileNames, filepath.Join(folderPath, file.Name()))
 		}
 	}
 
