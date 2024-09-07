@@ -1,12 +1,15 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/Jhooomn/file-transaction-processor/processor/service/templates"
 	"github.com/Jhooomn/file-transaction-processor/utils"
 	"golang.org/x/sync/errgroup"
 )
@@ -91,7 +94,12 @@ func (ps *processorService) process(ctx context.Context, data []map[string]strin
 	}
 
 	// invoke func with the logic
-	summary := UserSummary{}
+	summary := UserSummary{
+		Contact: Contact{
+			Name:  defaultName,
+			Email: defaultEmail,
+		},
+	}
 	summary.CalculateSummary(transactions)
 
 	// persist in repository
@@ -102,8 +110,8 @@ func (ps *processorService) process(ctx context.Context, data []map[string]strin
 		summary.AvgDebit,
 		summary.CreditCount,
 		summary.DebitCount,
-		defaultName,
-		defaultEmail)
+		summary.Contact.Name,
+		summary.Contact.Email)
 	if err != nil {
 		ps.logger.Error(fmt.Sprintf("It was no possible to save the record: [%s]", err))
 		return err
@@ -112,20 +120,42 @@ func (ps *processorService) process(ctx context.Context, data []map[string]strin
 	ps.logger.Info(fmt.Sprintf("record has been saved into db [%s] - [%s]", defaultName, defaultEmail))
 
 	// fetch template
-	var msg, subject string
-	msg = "Hello, there!"
-	now := time.Now()
+	msg, err := ps.buildEmailTemplate(summary)
+	if err != nil {
+		ps.logger.Error(fmt.Sprintf("It was no possible to build the email template: [%s]", err))
+		return err
+	}
 
-	subject = fmt.Sprintf("Stori Total Balance %d/%v/%d", now.Day(), int(now.Month()), now.Year())
+	now := time.Now()
+	subject := fmt.Sprintf("Stori Total Balance %d/%v/%d", now.Day(), int(now.Month()), now.Year())
 
 	// send notifications
-	err = ps.emailService.Send(ctx, defaultEmail, subject, msg)
+	err = ps.emailService.Send(ctx, defaultEmail, subject, *msg)
 	if err != nil {
 		ps.logger.Error(fmt.Sprintf("It was no possible to send the email: [%s]", err))
 		return err
 	}
 
 	return nil
+}
+
+func (ps *processorService) buildEmailTemplate(summary UserSummary) (*string, error) {
+	// Parse the template from the string constant
+	tmpl, err := template.New("emailTemplate").Parse(templates.TotalBalanceTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	// Execute template with data
+	var body bytes.Buffer
+	err = tmpl.Execute(&body, summary)
+	if err != nil {
+		return nil, err
+	}
+
+	message := body.String()
+
+	return &message, nil
 }
 
 func (ps *processorService) parseCSV(data []map[string]string) ([]TransactionRecord, error) {
@@ -166,7 +196,7 @@ func (us *UserSummary) CalculateSummary(transactions []TransactionRecord) {
 	us.TransactionsPerMonth = make(map[string]uint)
 
 	for _, tr := range transactions {
-		month := tr.Date.Format("January 2006")
+		month := tr.Date.Format("January")
 
 		us.TransactionsPerMonth[month]++
 
@@ -183,8 +213,10 @@ func (us *UserSummary) CalculateSummary(transactions []TransactionRecord) {
 
 	noMonths := float64(len(us.TransactionsPerMonth))
 
-	us.AvgDebit = us.AvgDebit / noMonths
-	us.AvgCredit = us.AvgCredit / noMonths
+	if noMonths > 0 {
+		us.AvgDebit = us.AvgDebit / noMonths
+		us.AvgCredit = us.AvgCredit / noMonths
+	}
 }
 
 // ParseTransactionType determines if the transaction is a credit or debit.
