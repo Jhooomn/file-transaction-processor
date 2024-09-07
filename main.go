@@ -3,14 +3,11 @@ package main
 import (
 	"os"
 
+	"github.com/Jhooomn/file-transaction-processor/processor/service"
 	"github.com/Jhooomn/file-transaction-processor/utils"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/joho/godotenv"
 )
-
-func hello() (string, error) {
-	return "Hello λ!", nil
-}
 
 func main() {
 
@@ -23,6 +20,8 @@ func main() {
 		}
 	}
 
+	service := service.NewProcessorService(os.Getenv("DATA_PATH"), 1, logger) // TODO: configure go-r-pool
+	service.Execute()
 	logger.Info("Running the lambda!")
-	lambda.Start(hello)
+	lambda.Start(service.Execute)
 }
