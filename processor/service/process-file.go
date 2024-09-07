@@ -2,16 +2,19 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/Jhooomn/file-transaction-processor/utils"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
 var (
-	dataHeader = []string{"Id", "Date", "Transaction"}
+	dataHeader   = []string{"Id", "Date", "Transaction"}
+	defaultName  = os.Getenv("DEFAULT_NAME")
+	defaultEmail = os.Getenv("DEFAULT_EMAIL")
 )
 
 func (ps *processorService) Execute() {
@@ -20,85 +23,70 @@ func (ps *processorService) Execute() {
 
 func (ps *processorService) execute() {
 
+	eg, ctx := errgroup.WithContext(context.Background())
+	eg.SetLimit(ps.opts.workerPool)
+
 	// fetch different files names
 	fileNames, err := utils.GetFileNames(ps.opts.dataPath)
 	if err != nil {
-		ps.logger.WithFields(logrus.Fields{
-			"details": err,
-			"path":    ps.opts.dataPath,
-		}).Error("Failed to read data path")
+		ps.logger.Error(fmt.Sprintf("Failed to read data path: [%s]", err))
 		return
 	}
 
 	if len(fileNames) == 0 {
-		ps.logger.WithFields(logrus.Fields{
-			"details": err,
-			"path":    ps.opts.dataPath,
-		}).Error("Could not fetch files from data path")
+		ps.logger.Error(fmt.Sprintf("Could not fetch files from data path: [%s]", err))
 		return
 	}
-
-	eg, _ := errgroup.WithContext(context.Background())
-	eg.SetLimit(ps.opts.workerPool)
 
 	for _, fileName := range fileNames {
 		eg.Go(func() error {
 			// Fetch data by path location
 			data, err := utils.ReadCSV(fileName, dataHeader)
 			if err != nil {
-				ps.logger.WithFields(logrus.Fields{
-					"details": err,
-					"file":    fileName,
-				}).Error("Failed to read csv file")
+				ps.logger.Error(fmt.Sprintf("Failed to read csv file: [%s]", err))
 				return err
 			}
 
 			if len(data) == 0 {
-				ps.logger.WithFields(logrus.Fields{
-					"details": err,
-					"file":    fileName,
-				}).Error("No data found to process")
+				ps.logger.Error(fmt.Sprintf("No data found to process: [%s]", err))
 				return err
 			}
 
 			// process the data
-			err = ps.process(data, fileName)
+			err = ps.process(ctx, data, fileName)
 			if err != nil {
-				ps.logger.WithFields(logrus.Fields{
-					"details": err,
-					"file":    fileName,
-				}).Error("It was no possible to process the data")
+				ps.logger.Error(fmt.Sprintf("It was no possible to process the data: [%s]", err))
+				return err
 			}
+
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
 			return nil
 		})
 	}
 
 	err = eg.Wait()
 	if err != nil {
-		ps.logger.WithFields(logrus.Fields{
-			"details": err,
-			"path":    ps.opts.dataPath,
-		}).Error("There was a problem while processing files")
+		ps.logger.Error(fmt.Sprintf("There was a problem while processing files: [%s]", err))
+		return
 	}
+
+	ps.logger.Info("last line")
 
 }
 
-func (ps *processorService) process(data []map[string]string, fileName string) error {
+func (ps *processorService) process(ctx context.Context, data []map[string]string, fileName string) error {
 	// transform data
 	transactions, err := ps.parseCSV(data)
 	if err != nil {
-		ps.logger.WithFields(logrus.Fields{
-			"details": err,
-			"file":    fileName,
-		}).Error("It was no possible to parse the data")
+		ps.logger.Error(fmt.Sprintf("It was no possible to parse the data: [%s]", err))
 		return err
 	}
 
 	if len(transactions) == 0 {
-		ps.logger.WithFields(logrus.Fields{
-			"details": nil,
-			"file":    fileName,
-		}).Error("No data found into this file")
+		ps.logger.Error(fmt.Sprintf("No data found into this file: [%s]", err))
 		return nil // TODO: return business error
 	}
 
@@ -107,13 +95,24 @@ func (ps *processorService) process(data []map[string]string, fileName string) e
 	summary.CalculateSummary(transactions)
 
 	// persist in repository
+	err = ps.processorRepository.Save(ctx,
+		summary.TransactionsPerMonth,
+		summary.TotalBalance,
+		summary.AvgCredit,
+		summary.AvgDebit,
+		summary.CreditCount,
+		summary.DebitCount,
+		defaultName,
+		defaultEmail)
+	if err != nil {
+		ps.logger.Error(fmt.Sprintf("It was no possible to save the record: [%s]", err))
+		return err
+	}
+
+	ps.logger.Info(fmt.Sprintf("record has been saved into db [%s] - [%s]", defaultName, defaultEmail))
 
 	// send notifications concurrently
 
-	return nil
-}
-
-func (ps *processorService) calculateTransactions(transactions []TransactionRecord) error {
 	return nil
 }
 
@@ -148,4 +147,39 @@ func (ps *processorService) parseCSV(data []map[string]string) ([]TransactionRec
 	}
 
 	return records, nil
+}
+
+// CalculateSummary calculates the summary of transactions for a user.
+func (us *UserSummary) CalculateSummary(transactions []TransactionRecord) {
+	us.TransactionsPerMonth = make(map[string]uint)
+
+	for _, tr := range transactions {
+		month := tr.Date.Format("January 2006")
+
+		us.TransactionsPerMonth[month]++
+
+		us.TotalBalance += tr.Transaction
+
+		if tr.Type == Credit {
+			us.AvgCredit += tr.Transaction // counter
+			us.CreditCount++
+		} else {
+			us.AvgDebit += tr.Transaction // counter
+			us.DebitCount++
+		}
+	}
+
+	noMonths := float64(len(us.TransactionsPerMonth))
+
+	us.AvgDebit = us.AvgDebit / noMonths
+	us.AvgCredit = us.AvgCredit / noMonths
+}
+
+// ParseTransactionType determines if the transaction is a credit or debit.
+func (tr *TransactionRecord) ParseTransactionType() {
+	if tr.Transaction >= 0 {
+		tr.Type = Credit
+	} else {
+		tr.Type = Debit
+	}
 }
