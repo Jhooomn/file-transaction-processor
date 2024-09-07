@@ -1,7 +1,6 @@
 package templates
 
 const TotalBalanceTemplate = `
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -82,6 +81,11 @@ const TotalBalanceTemplate = `
             margin-top: 20px;
             text-align: center;
         }
+
+        .footer a {
+            color: #2ecc71;
+            text-decoration: none;
+        }
     </style>
 </head>
 
@@ -121,7 +125,9 @@ const TotalBalanceTemplate = `
 
         <div class="footer">
             <p>Thank you for using our service!</p>
-            <p>Contact us at support@stori.com</p>
+            <p>Contact us at <a href="mailto:support@stori.com">support@stori.com</a></p>
+            <p>Visit us: <a href="https://www.storicard.com/" target="_blank">storicard.com</a></p>
+            <p>Follow us: <a href="https://www.linkedin.com/company/stori-card/" target="_blank">LinkedIn</a></p>
             <div class="logo">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Stori_Logo_2023.svg/1920px-Stori_Logo_2023.svg.png" alt="Company Logo" width="150">
             </div>
@@ -130,7 +136,4 @@ const TotalBalanceTemplate = `
 </body>
 
 </html>
-
-
-
 `

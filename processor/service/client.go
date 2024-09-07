@@ -5,7 +5,6 @@ type processorService struct {
 	logger              Logger
 	processorRepository processorRepository
 	emailService        emailService
-	// email service client
 }
 
 type opts struct {
