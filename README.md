@@ -2,7 +2,7 @@
 # **File Transaction Processor**
 
 ![Go Version](https://img.shields.io/badge/Go-1.23.1-blue)
-![AWS Lambda](https://img.shields.io/badge/AWS%20Lambda-!Deployed-red)
+![AWS Lambda](https://img.shields.io/badge/AWS%20Lambda-Deployed-green)
 
 ## **Table of Contents**
 - [Overview](#overview)
@@ -129,4 +129,18 @@ make test
    docker run -p 8080:8080 --env-file=.env file-transaction-processor
    ```
 
+### Using AWS 
 
+1. **Build the function:**
+   Run the following command to build the .zip with all the info needed:
+   ```bash
+   make build
+   ```
+2. **Upload the .zip file to the lambda service**
+![alt text](image.png)
+
+3. **Invoke the function using AWS CLI**
+   Run the following command to trigger the lambda in the cloud env:
+   ```bash
+    aws lambda invoke --function-name gosimple --payload fileb://payload.json lambda.out 
+   ```
