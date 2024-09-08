@@ -2,24 +2,16 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	"go.uber.org/zap"
 
 	"github.com/Jhooomn/file-transaction-processor/mocks"
 	"github.com/stretchr/testify/mock"
-	"go.uber.org/zap"
 )
 
 func Test_processorService_process(t *testing.T) {
-	repoMock := mocks.NewProcessorRepository(t)
-	emailMock := mocks.NewEmailService(t)
-
-	logger, _ := zap.NewProduction()
-
-	ps := &processorService{
-		logger:              logger,
-		processorRepository: repoMock,
-		emailService:        emailMock,
-	}
 
 	data := []map[string]string{
 		{"Id": "0", "Date": "7/15", "Transaction": "+60.5"},
@@ -43,29 +35,84 @@ func Test_processorService_process(t *testing.T) {
 
 	tests := []struct {
 		name  string
-		ps    *processorService
 		setUp func(repo *mocks.ProcessorRepository, email *mocks.EmailService)
 		args  struct {
-			ctx      context.Context
 			data     []map[string]string
 			fileName string
 		}
 		wantErr bool
 	}{
 		{
-			name: "Successful Process",
-			ps:   ps,
+			name: "error email",
 			setUp: func(repo *mocks.ProcessorRepository, email *mocks.EmailService) {
-				repoMock.On("Save", ctx, transactionsPerMonth, totalBalance, avgCredit, avgDebit, creditCount, debitCount, "", "").Return(nil)
-				emailMock.On("Send", ctx, "", "Stori Total Balance 7/9/2024", mock.Anything).Return(nil)
+				repo.On("Save", ctx, transactionsPerMonth, totalBalance, avgCredit, avgDebit, creditCount, debitCount, "", "").Return(nil)
+				email.On("Send", ctx, "", "Stori Total Balance 7/9/2024", mock.Anything).Return(fmt.Errorf("not possible to send"))
 
 			},
 			args: struct {
-				ctx      context.Context
 				data     []map[string]string
 				fileName string
 			}{
-				ctx:      context.Background(),
+				data:     data,
+				fileName: "transactions.csv",
+			},
+			wantErr: true,
+		},
+		{
+			name: "error Save",
+			setUp: func(repo *mocks.ProcessorRepository, email *mocks.EmailService) {
+				repo.On("Save", ctx, transactionsPerMonth, totalBalance, avgCredit, avgDebit, creditCount, debitCount, "", "").Return(fmt.Errorf("could not save"))
+			},
+			args: struct {
+				data     []map[string]string
+				fileName string
+			}{
+				data:     data,
+				fileName: "transactions.csv",
+			},
+			wantErr: true,
+		},
+		{
+			name: "error empty csv",
+			setUp: func(repo *mocks.ProcessorRepository, email *mocks.EmailService) {
+
+			},
+			args: struct {
+				data     []map[string]string
+				fileName string
+			}{
+				data: []map[string]string{
+					{"Id": "", "Date": "", "Transaction": ""},
+				},
+				fileName: "transactions.csv",
+			},
+			wantErr: true,
+		},
+		{
+			name: "error parse csv",
+			setUp: func(repo *mocks.ProcessorRepository, email *mocks.EmailService) {
+
+			},
+			args: struct {
+				data     []map[string]string
+				fileName string
+			}{
+				data:     []map[string]string{},
+				fileName: "transactions.csv",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Successful Process",
+			setUp: func(repo *mocks.ProcessorRepository, email *mocks.EmailService) {
+				repo.On("Save", ctx, transactionsPerMonth, totalBalance, avgCredit, avgDebit, creditCount, debitCount, "", "").Return(nil)
+				email.On("Send", ctx, "", "Stori Total Balance 7/9/2024", mock.Anything).Return(nil)
+
+			},
+			args: struct {
+				data     []map[string]string
+				fileName string
+			}{
 				data:     data,
 				fileName: "transactions.csv",
 			},
@@ -76,9 +123,18 @@ func Test_processorService_process(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			tt.setUp(tt.ps.processorRepository.(*mocks.ProcessorRepository), tt.ps.emailService.(*mocks.EmailService))
+			logger, _ := zap.NewProduction()
+			repoMock := mocks.NewProcessorRepository(t)
+			emailMock := mocks.NewEmailService(t)
+			ps := &processorService{
+				logger:              logger,
+				processorRepository: repoMock,
+				emailService:        emailMock,
+			}
 
-			if err := tt.ps.process(tt.args.ctx, tt.args.data, tt.args.fileName); (err != nil) != tt.wantErr {
+			tt.setUp(repoMock, emailMock)
+
+			if err := ps.process(ctx, tt.args.data, tt.args.fileName); (err != nil) != tt.wantErr {
 				t.Errorf("processorService.process() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
