@@ -9,8 +9,10 @@ GO_VENDOR := $(GO) mod vendor
 GO_FMT := $(GO) fmt ./...
 
 build:
-	@echo "Building $(APP_NAME)..."
-	$(GO_BUILD) -o $(BUILD_DIR)/$(APP_NAME) .
+	mkdir -p dist
+	env GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -tags lambda.norpc -ldflags="-s -w" -o ./dist/bootstrap main.go
+	chmod +x ./dist/bootstrap
+	cd ./dist && zip -FS bootstrap.zip bootstrap ../.env ../data -r && cd ..
 
 test:
 	@echo "Running tests..."
