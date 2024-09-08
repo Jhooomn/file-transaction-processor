@@ -23,6 +23,7 @@ var (
 
 var (
 	ErrNoDataFoundInTheFile = errors.New("No data found in the file")
+	ErrNoDataFoundToProcess = errors.New("No data found to process")
 )
 
 func (ps *processorService) Execute() {
@@ -57,7 +58,7 @@ func (ps *processorService) extract() {
 
 			if len(data) == 0 {
 				ps.logger.Error(fmt.Sprintf("No data found to process: [%s]", err))
-				return err
+				return ErrNoDataFoundToProcess
 			}
 
 			// process the data
@@ -96,13 +97,13 @@ func (ps *processorService) process(ctx context.Context, data []map[string]strin
 		return ErrNoDataFoundInTheFile
 	}
 
-	// invoke func with the logic
 	summary := UserSummary{
 		Contact: Contact{
 			Name:  defaultName,
 			Email: defaultEmail,
 		},
 	}
+	// invoke func with the logic
 	summary.CalculateSummary(transactions)
 
 	// persist in repository
