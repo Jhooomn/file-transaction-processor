@@ -12,10 +12,10 @@ build:
 	@echo "Building $(APP_NAME)..."
 	$(GO_BUILD) -o $(BUILD_DIR)/$(APP_NAME) .
 
-
 test:
 	@echo "Running tests..."
-	$(GO_TEST) ./...
+	go test -count=1 ./...
+
 
 
 tidy_vendor:
@@ -29,6 +29,8 @@ format:
 
 mock:
 	mockery --all --dir=./processor --output=mocks 
+	mockery --all --dir=./infrastructure/email --output=mocks 
+	mockery --all --dir=./infrastructure/repository --output=mocks 
 
 local_pipeline:
 	make tidy_vendor && make mock && make format && make build && make test 

@@ -21,10 +21,10 @@ var (
 )
 
 func (ps *processorService) Execute() {
-	ps.execute()
+	ps.extract()
 }
 
-func (ps *processorService) execute() {
+func (ps *processorService) extract() {
 
 	eg, ctx := errgroup.WithContext(context.Background())
 	eg.SetLimit(ps.opts.workerPool)
@@ -73,10 +73,8 @@ func (ps *processorService) execute() {
 	err = eg.Wait()
 	if err != nil {
 		ps.logger.Error(fmt.Sprintf("There was a problem while processing files: [%s]", err))
-		return
+		return // last line, nothing to do
 	}
-
-	ps.logger.Info("last line")
 
 }
 
@@ -90,7 +88,7 @@ func (ps *processorService) process(ctx context.Context, data []map[string]strin
 
 	if len(transactions) == 0 {
 		ps.logger.Error(fmt.Sprintf("No data found into this file: [%s]", err))
-		return nil // TODO: return business error
+		return ErrNoDataFoundInTheFile
 	}
 
 	// invoke func with the logic
