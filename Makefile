@@ -18,9 +18,8 @@ test:
 	@echo "Running tests..."
 	go test -count=1 ./...
 
-
-
 tidy_vendor:
+	rm -rf vendor
 	@echo "Tidying and vendoring dependencies..."
 	$(GO_TIDY)
 	$(GO_VENDOR)
@@ -29,12 +28,13 @@ format:
 	@echo "Formatting current golang code..."
 	$(GO_FMT)
 
+## WNS
 mock:
 	mockery --all --dir=./processor --output=mocks 
 	mockery --all --dir=./infrastructure/email --output=mocks 
 	mockery --all --dir=./infrastructure/repository --output=mocks 
 
 local_pipeline:
-	make tidy_vendor && make mock && make format && make build && make test 
+	make tidy_vendor && make format && make test 
 
 .PHONY: build test tidy_vendor format mock local_pipeline 

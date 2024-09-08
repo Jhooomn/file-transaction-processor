@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"html/template"
 	"os"
@@ -18,6 +19,10 @@ var (
 	dataHeader   = []string{"Id", "Date", "Transaction"}
 	defaultName  = os.Getenv("DEFAULT_NAME")
 	defaultEmail = os.Getenv("DEFAULT_EMAIL")
+)
+
+var (
+	ErrNoDataFoundInTheFile = errors.New("No data found in the file")
 )
 
 func (ps *processorService) Execute() {
