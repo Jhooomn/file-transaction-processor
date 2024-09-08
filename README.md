@@ -2,7 +2,7 @@
 # **File Transaction Processor**
 
 ![Go Version](https://img.shields.io/badge/Go-1.23.1-blue)
-![AWS Lambda](https://img.shields.io/badge/AWS%20Lambda-!Deployed-red)
+![AWS Lambda](https://img.shields.io/badge/AWS%20Lambda-Deployed-green)
 
 ## **Table of Contents**
 - [Overview](#overview)
