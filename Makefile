@@ -12,10 +12,10 @@ build:
 	@echo "Building $(APP_NAME)..."
 	$(GO_BUILD) -o $(BUILD_DIR)/$(APP_NAME) .
 
-
 test:
 	@echo "Running tests..."
-	$(GO_TEST) ./...
+	go test -count=1 ./...
+
 
 
 tidy_vendor:
