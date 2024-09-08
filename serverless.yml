@@ -1,0 +1,21 @@
+service: go-cron-job
+
+provider:
+  name: aws
+  runtime: go1.x
+  region: us-east-1
+  stage: dev
+  timeout: 30
+
+functions:
+  cronJob:
+    handler: build/file-transaction-processor # Path to the Go binary in the 'bin' directory
+    events:
+      - schedule:
+          rate: rate(1 minute) # Schedule the function to run every minute
+          enabled: true # Enable the scheduled event
+
+package:
+  patterns:
+    - '!vendor/**' # Exclude 'vendor' if present
+    - '!**/tests/**' # Exclude test files or directories if present

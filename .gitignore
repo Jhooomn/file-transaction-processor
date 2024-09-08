@@ -7,6 +7,8 @@
 *.dll
 *.so
 *.dylib
+*.json
+*.zip
 
 # Test binary, built with `go test -c`
 *.test
@@ -28,3 +30,4 @@ go.work.sum
 
 coverage.html
 .vscode/
+node_modules/
