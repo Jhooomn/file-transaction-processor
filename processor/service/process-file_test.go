@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -19,6 +20,10 @@ func Test_processorService_process(t *testing.T) {
 		{"Id": "2", "Date": "8/2", "Transaction": "-20.46"},
 		{"Id": "3", "Date": "8/13", "Transaction": "+10"},
 	}
+
+	now := time.Now()
+
+	subject := fmt.Sprintf("Stori Total Balance %d/%v/%d", now.Day(), int(now.Month()), now.Year())
 
 	ctx := context.Background()
 
@@ -46,7 +51,7 @@ func Test_processorService_process(t *testing.T) {
 			name: "error email",
 			setUp: func(repo *mocks.ProcessorRepository, email *mocks.EmailService) {
 				repo.On("Save", ctx, transactionsPerMonth, totalBalance, avgCredit, avgDebit, creditCount, debitCount, "", "").Return(nil)
-				email.On("Send", ctx, "", "Stori Total Balance 7/9/2024", mock.Anything).Return(fmt.Errorf("not possible to send"))
+				email.On("Send", ctx, "", subject, mock.Anything).Return(fmt.Errorf("not possible to send"))
 
 			},
 			args: struct {
@@ -106,7 +111,7 @@ func Test_processorService_process(t *testing.T) {
 			name: "Successful Process",
 			setUp: func(repo *mocks.ProcessorRepository, email *mocks.EmailService) {
 				repo.On("Save", ctx, transactionsPerMonth, totalBalance, avgCredit, avgDebit, creditCount, debitCount, "", "").Return(nil)
-				email.On("Send", ctx, "", "Stori Total Balance 7/9/2024", mock.Anything).Return(nil)
+				email.On("Send", ctx, "", subject, mock.Anything).Return(nil)
 
 			},
 			args: struct {
