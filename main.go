@@ -35,7 +35,6 @@ func main() {
 	emailService := email.NewEmailService(os.Getenv("SMTP_FROM"), os.Getenv("SMTP_PSW"), os.Getenv("SMTP_SERVER"))
 
 	service := service.NewProcessorService(os.Getenv("DATA_PATH"), 4, logger, processorRepository, emailService) // TODO: configure go-r-pool
-	service.Execute()
 	logger.Info("Running the lambda!")
 	lambda.Start(service.Execute)
 }
