@@ -56,7 +56,8 @@ The architecture of this project follows a serverless pattern using AWS Lambda, 
 Ensure you have the following installed:
 
 - [Go 1.23.1](https://golang.org/dl/)
-- [Podman](https://podman.io/) (optional, for local Lambda container emulation)
+- [Docker](https://www.docker.com/)
+- [Podman](https://podman.io/) 
 
 ### Steps
 
@@ -118,12 +119,14 @@ make test
    Run the following command to build the image using podman:
    ```bash
    podman build -t file-transaction-processor .
+   docker build -t file-transaction-processor .
    ```
 
 2. **Deploy the Container:**
    After the image building, you can deploy your container locally with these commands:
    ```bash
    podman run -p 8080:8080 --env-file=.env file-transaction-processor
+   docker run -p 8080:8080 --env-file=.env file-transaction-processor
    ```
 
 
