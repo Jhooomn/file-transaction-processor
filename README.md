@@ -112,11 +112,11 @@ make test
 
 ## **Deployment**
 
-### Using Podman
+### Using Podman or Docker
 
 
 1. **Build the Image:**
-   Run the following command to build the image using podman:
+   Run the following command to build the image using podman or docker:
    ```bash
    podman build -t file-transaction-processor .
    docker build -t file-transaction-processor .
